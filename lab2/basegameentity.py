@@ -25,11 +25,13 @@ class BaseGameEntity:
 				self.pointIndex = node.id
 	#Place buildings that should be placed before the simulation starts
 	def placeStaticBuildings():
+		townhallPos = Configuration.config["buildings"]["townHall"]["position"]
 		for node in BaseGameEntity.map:
-			if(node.id == Configuration.config["buildings"]["townHall"]["position"]):
-				node.building = TownHall()
+			if node.id == townhallPos:
+				node.building = TownHall(townhallPos)
 				BaseGameEntity.townHall = node.id
-				node.building.circle.draw(BaseGameEntity.windowClass.window)
+				#node.building.circle.draw(BaseGameEntity.windowClass.window)
+
 	def setID(self, ID):
 		if(ID >= BaseGameEntity.Im_nextValidID):
 			self.ID = ID
@@ -39,11 +41,11 @@ class BaseGameEntity:
 			assert 0, "invalid ID"
 
 	#Set static variables that are use by all the entities
-	def setDependencies(map, window, width, height):
+	def setDependencies(map, windowHandle, mapHandle):
 		BaseGameEntity.map = map
-		BaseGameEntity.windowClass = window
-		BaseGameEntity.width = width
-		BaseGameEntity.height = height
+		BaseGameEntity.windowClass = windowHandle
+		BaseGameEntity.width = mapHandle.width
+		BaseGameEntity.height = mapHandle.heigth
 
 	#Follows a path and returns true when it has reached the next point
 	def goTo(self):

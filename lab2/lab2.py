@@ -5,14 +5,14 @@ from config import *
 from basegameentity import *
 from time import perf_counter
 Configuration.open()
-a = MapLoader()
-grid = a.createGrid(FileImporter.loadFile("map.txt"))
-b = Window()
-b.drawWindow(a.width, a.heigth, grid)
-a.addTrees(grid, b, a)
+mapHandle = MapLoader()
+windowHandle = Window()
+grid = mapHandle.createGrid(FileImporter.loadFile("map.txt"))
+windowHandle.drawWindow(mapHandle, grid)
+mapHandle.addTrees(windowHandle, mapHandle)
 
-BaseGameEntity.setDependencies(grid, b, a.width, a.heigth)
-#BaseGameEntity.placeStaticBuildings()
+BaseGameEntity.setDependencies(grid, windowHandle, mapHandle)
+BaseGameEntity.placeStaticBuildings()
 explorerlist = []
 
 
@@ -32,4 +32,4 @@ while(1):
 
 	if(perf_counter() - time > 1):
 		time = perf_counter()
-		b.updateWindow()
+		windowHandle.updateWindow()

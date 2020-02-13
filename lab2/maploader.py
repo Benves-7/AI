@@ -38,11 +38,11 @@ class MapLoader:
 				self.nextID += 1
 		return self.grid
 
-	def addTrees(self, grid, window, map): #windowWidth, windowHeight, mapWidth, mapHeight):
-		for node in grid:
+	def addTrees(self, windowHandle, mapHandle): #windowWidth, windowHeight, mapWidth, mapHeight):
+		for node in self.grid:
 			if(node.isTree):
 				for x in range(0,5):
-					node.trees.append(TreeNode(node, window, map))  #windowWidth, windowHeight, mapWidth, mapHeight))
+					node.trees.append(TreeNode(node, windowHandle, mapHandle))  #windowWidth, windowHeight, mapWidth, mapHeight))
 
 	def getWidth(self):
 		return width
@@ -146,19 +146,18 @@ class Node:
 		self.trees = []
 		self.building = None
 		self.reservedTrees = 0
-
 # Randomizes a position inside a node when created
 class TreeNode:
 	size = 4
 
-	def __init__(self, node, window, map):
+	def __init__(self, node, windowHandle, mapHandle):
 		self.parent = node
-		self.widthOfNode = window.indentX
-		self.heigthOfNode = window.indentY
-		pos = self.randomPos()
-		self.shape = window.window.create_oval(pos[0], pos[1], pos[2], pos[3], fill= "green3")
+		self.widthOfNode = windowHandle.indentX
+		self.heigthOfNode = windowHandle.indentY
+		pos = self.randomTreePos()
+		self.shape = windowHandle.window.create_oval(pos[0], pos[1], pos[2], pos[3], fill= "green3")
 		
-	def randomPos(self):
+	def randomTreePos(self):
 		self.x = x = uniform(self.parent.x*self.widthOfNode, (self.parent.x+1)*self.widthOfNode)
 		self.y = y = uniform(self.parent.y*self.heigthOfNode, (self.parent.y+1)*self.heigthOfNode)
 
