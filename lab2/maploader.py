@@ -1,23 +1,20 @@
 from config import *
 from random import randint, uniform
-from graphics import Point
-from graphics import Circle
-from graphics import color_rgb
+
 #Created the map object and fills it with Nodes
-class MapLoader:
+class MapHandle:
 	width = 0
 	heigth = 0
 	grid = []
 	nextID = 0
-	def __init__(self):
-		pass
+
 	def createGrid(self, lineString):
-		self.width = len(list(lineString[0]))
+		MapHandle.width = self.width = len(list(lineString[0]))
 		parameters = Configuration.config["nodeTypes"]
 
 		for line in lineString:
 			lineList = list(line)
-			self.heigth += 1
+			MapHandle.heigth = self.heigth = self.heigth + 1
 			for character in lineList:
 				#Each nodes parameters are from the config file
 				if character == "B":#Mountain
@@ -37,48 +34,29 @@ class MapLoader:
 					self.grid.append(Node(water["trees"], bool(water["walkable"]), water["color"], self.nextID, water["mSpeed"], water["fogOfWar"]))
 				self.nextID += 1
 		return self.grid
-
 	def addTrees(self, windowHandle, mapHandle): #windowWidth, windowHeight, mapWidth, mapHeight):
 		for node in self.grid:
 			if(node.isTree):
 				for x in range(0,5):
 					node.trees.append(TreeNode(node, windowHandle, mapHandle))  #windowWidth, windowHeight, mapWidth, mapHeight))
 
-	def getWidth(self):
-		return width
-
-	def getHeigth(self):
-		return heigth
-
-	def getStart(grid):
-		for node in grid:
-			if(node.isSpawn == True):
-				return node.id
-			else:
-				pass
-		assert 0, "No starting point found"
-
-	def getGoal(grid):
-		for node in grid:
-			if(node.isGoal == True):
-				return node.id
-			else:
-				pass
-		assert 0, "No goal found"
-	def getNeighbours(id, map, width, heigth):
+	def getNeighbours(id):
+		map = MapHandle.grid
+		width = MapHandle.width
 		neighbours = []
 		if(map[id - 1].isWalkable == True and not map[id - 1].fogOfWar): #Left of
 			neighbours.append(id-1)
 		if(map[id - width].isWalkable == True and not map[id - width].fogOfWar): #Above
-			neighbours.append(id - width)
+			neighbours.append(id - MapHandle.width)
 		if(map[id + 1].isWalkable == True and not map[id + 1].fogOfWar): #Right of
 			neighbours.append(id+1)
 		if(map[id + width].isWalkable == True and not map[id + width].fogOfWar): #Below
-			neighbours.append(id + width)
+			neighbours.append(id + MapHandle.width)
 
 		return neighbours
-	#returns a list of all neighbours vertical, horizontal and diagonal
-	def getMoreNeighbours(id, map, width, height):
+	def getAllNeighbours(id): #returns a list of all neighbours vertical, horizontal and diagonal
+		map = MapHandle.grid
+		width = MapHandle.width
 		neighbours = []
 		top = False
 		bottom = False
@@ -105,7 +83,16 @@ class MapLoader:
 		if(map[id + width - 1].isWalkable and bottom and left): #Below left
 			neighbours.append(id + width - 1)
 
-		return neighbours
+		return neighbours 
+
+	def getRandomNode(id): #return random node ID within range..
+		ychange = randint(-5, 5)
+		xchange = randint(-5, 5)
+		newID = id + xchange + (ychange*MapHandle.width)
+		# if newID >
+		# TODO: check to see if newID is inrange of old ID, aswell as inside the grid..
+		MapHandle.grid[1]
+		pass
 
 	#returns the manhattan distance between two nodes
 	def getDistance(nodeA, nodeB):
@@ -121,6 +108,8 @@ class MapLoader:
 				id = node
 
 		return id
+
+
 #Map is filled with instances of this class
 class Node:
 	isTree = False
@@ -163,7 +152,6 @@ class TreeNode:
 
 		return [x-self.size/2, y-self.size/2, x+self.size/2, y+self.size/2]
 
-import state
 import messaging
 from math import *
 from graphics import *

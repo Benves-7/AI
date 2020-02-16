@@ -1,8 +1,8 @@
-
+from window import *
 
 class BaseGameEntity:
 	Im_nextValidID = 0
-	map = []
+	mapHandle = Window.mapHandle
 	width = None
 	height = None
 	windowClass = 0
@@ -10,19 +10,12 @@ class BaseGameEntity:
 	#path = None
 	def __init__(self, ID):
 		self.setID(ID)
-		#self.point = Point(self.map[2020].center.getX(),self.map[2020].center.getY()) 
-		#self.playerCircle = Circle(Point(self.map[2020].center.getX(),self.map[2020].center.getY()) , 3)
-		#self.playerCircle.setFill("yellow")
-		#self.pointIndex = None
-		#self.findPointIndex()
-		#self.type = ""
-		#self.path = []
-		#self.playerCircle.draw(BaseGameEntity.windowClass.window)
-	#Sets the pointindex to the index of the node that the player is currently standing on
-	def findPointIndex(self):
-		for node in self.map:
-			if(self.point.equals(node.center)):
-				self.pointIndex = node.id
+		self.position = TownHall.position
+		self.size = [Window.indentX/2, Window.indentY/2]
+		self.shape = Window.window.create_oval(self.position[0]-self.size[0]/2, self.position[1]-self.size[1]/2, self.position[0]+self.size[0]/2, self.position[1]+self.size[1]/2, fill= "yellow")
+		self.nodeId = TownHall.nodeId
+		self.path = []
+	
 	#Place buildings that should be placed before the simulation starts
 	def placeStaticBuildings():
 		townhallPos = Configuration.config["buildings"]["townHall"]["position"]
@@ -30,11 +23,9 @@ class BaseGameEntity:
 			if node.id == townhallPos:
 				node.building = TownHall(townhallPos)
 				BaseGameEntity.townHall = node.id
-				#node.building.circle.draw(BaseGameEntity.windowClass.window)
 
 	def setID(self, ID):
 		if(ID >= BaseGameEntity.Im_nextValidID):
-			self.ID = ID
 			self.ID = ID
 			BaseGameEntity.Im_nextValidID = ID + 1
 		else:
@@ -73,15 +64,10 @@ class BaseGameEntity:
 
 
 class Entity(BaseGameEntity):
-
-
-
-	#m_currentState = state.Start()
-	color = None
-
 	def __init__(self, id, type, profession = ""):
 		BaseGameEntity.__init__(self, id)
 		self.type = type
+		self.profession = profession
 		self.startTime = None
 		if(type == "explorer"):
 			self.m_currentState = state.EStart()
@@ -90,7 +76,6 @@ class Entity(BaseGameEntity):
 			self.trees = 0
 		elif(type == "craftsman"):
 			self.m_currentState = state.CStart()
-			self.profession = profession
 
 	#Used for upgrading an entity
 	def changeType(self, type, profession = ""):

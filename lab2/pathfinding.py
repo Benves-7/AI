@@ -1,4 +1,3 @@
-
 def BreadthFirst(map, width, heigth, start, goal):
 	goalIndex = goal
 	startIndex = start
@@ -47,8 +46,6 @@ def DepthFirst(map, width, heigth):
 			path.append(startIndex)
 			path.reverse()
 			return path
-
-
 
 def AStar(map, width, heigth, window, start, goal = None):
 	startIndex = start

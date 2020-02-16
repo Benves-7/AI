@@ -1,11 +1,12 @@
 from tkinter import *
 from config import *
+
 class Window:
+	mapHandle = None
+
 	window = None
 	heigthP = None
 	widthP = None
-	#xIndent = 0
-	#yIndent = 0
 	indentX = 0
 	indentY = 0
 	#Load the window size from the config
@@ -14,7 +15,7 @@ class Window:
 		self.widthP = Configuration.config["windowParams"]["width"]
 	#Draw a rectangle for each node in the map
 	def drawWindow(self, mapHandle, nodes):
-		self.mapHandle = mapHandle
+		Window.mapHandle = self.mapHandle = mapHandle
 		self.tk = tk = Tk()
 		Window.window = window = Canvas(tk, width= self.widthP, height= self.heigthP)
 		tk.title("AI TEST")

@@ -1,13 +1,21 @@
+from config import Configuration
+from window import *
+from state import *
+from buildings import *
+from time import perf_counter
+
 
 class Manager:
-	map = []
+	mapHandle = Window.mapHandle
+	mapGrid = []
 
 class ExplorerManager(Manager):
 	pass
 
 class ResourceManager(Manager):
-	charcoal = 0
-	trees = 0
+	needCharcoal = False
+	needTrees = False
+	lookForTrees = False
 
 	#When an explorer finds a tree its location is saved inside this list
 	treeLocations = []
@@ -28,15 +36,37 @@ class ResourceManager(Manager):
 			return closestNode
 	#If a worker isn't doing anything make it search for a tree to cut down
 	def Update():
-		return
-		for id, ent in EntityManager.entities.items():
-			if(ent.type == "worker" and ent.path ==  None and len(ResourceManager.treeLocations) != 0):
-				ent.changeState(state.WGoToTree())
+		if TownHall.charcoal <= 200:
+		    ResourceManager.needCharcoal = True
+		else:
+			ResourceManager.needCharcoal = False
 
+		if TownHall.trees <= 400:
+			ResourceManager.needTrees = True
+		else:
+			ResourceManager.needTrees = False
+
+		if len(ResourceManager.treeLocations) <= 0:
+			ResourceManager.lookForTrees = True
+		else:
+			ResourceManager.lookForTrees = False
+
+		if ResourceManager.lookForTrees and EntityManager.explorers < Configuration.config["aiData"]["explorers"]:
+			EntityManager.needExplorers = True
+		else:
+			EntityManager.needExplorers = False
+
+		if ResourceManager.needCharcoal and EntityManager.craftsmen < Configuration.config["aiData"]["craftsman"]:
+			EntityManager.needCraftsman = True
+		else:
+			EntityManager.needCraftsman = False
+	
 class BuildingManager(Manager):
 	kilns = 0
-
 	buildings = {}
+
+	needKiln = False
+	canBuildKiln = False
 
 	def addBuilding(building, type):
 		BuildingManager.buildings.append(building)
@@ -44,47 +74,35 @@ class BuildingManager(Manager):
 			kilns += 1
 	#Checks if conditions are right for building a kiln and if they are it builds one
 	def Update():
-		return
-		#Build kilns
-		if(ResourceManager.trees > 10 and EntityManager.builders > 0 and BuildingManager.kilns < Configuration.config["aiData"]["kilns"]):
-			buildingPos = 0
-			while(1):
-				#position of the kiln
-				xRand = random.randint(-10, 10)
-				yRand = random.randint(-10,10)
-				buildingPos = Configuration.config["buildings"]["townHall"]["position"] + (xRand + BaseGameEntity.width * yRand)
-				if(not BaseGameEntity.map[buildingPos].fogOfWar and BaseGameEntity.map[buildingPos].building == None and BaseGameEntity.map[buildingPos].moveSpeed == 1 and BaseGameEntity.map[buildingPos].isWalkable):
-					builder =  EntityManager.getBuilder()
-					if(builder != False):
-						BaseGameEntity.map[buildingPos].building = Kiln(buildingPos)
-						BuildingManager.buildings[buildingPos] = BaseGameEntity.map[buildingPos].building
-						builder.working = True
-						builder.path = BreadthFirst(BaseGameEntity.map, BaseGameEntity.width, BaseGameEntity.height, builder.pointIndex, buildingPos)
-						circle = Circle(BaseGameEntity.map[buildingPos].center, 5)
-						circle.setFill("White")
-						circle.draw(BaseGameEntity.windowClass.window)
-						BuildingManager.kilns +=1
-						builder.changeState(state.BBuildBuilding())
-						break
-					break
-		
-		
+		if BuildingManager.kilns < Configuration.config["aiData"]["kilns"]:
+			BuildingManager.needKiln = True
+		else:
+			BuildingManager.needKiln = False
 
+		if  TownHall.trees >= Configuration.config["buildings"]["kiln"]["cost"]:
+			BuildingManager.canBuildKiln = True
+		else:
+			BuildingManager.canBuildKiln = False
 
-class EntityManager:
+		if BuildingManager.canBuildKiln and BuildingManager.needKiln and EntityManager.builders < Configuration.config["aiData"]["builders"]:
+			EntityManager.needBuilders = True
+		else:
+			EntityManager.needBuilders = False
 
+class EntityManager(Manager):
 	entities = {}
 	craftsmen = 0
 	builders = 0
-
 	workers = 0
 	explorers = 0
+
+	needBuilders = False
+	needExplorers = False
+
 	trainingCraftsman = False
-	#numExplorers = Configuration.config["aiData"]["numExplorers"]
-		
+	idleCounter = 0
 
 	def addEntity(entity):
-		#numExplorers = Configuration.config["aiData"]["numExplorers"]
 		EntityManager.entities[entity.ID] = entity
 		if(entity.type == "worker"):
 			EntityManager.workers += 1
@@ -93,22 +111,39 @@ class EntityManager:
 		if(entity.type == "craftsman"):
 			EntityManager.craftsmen += 1
 
-
 	def getEntity(id):
 		return EntityManager.entities[id]
-	#returns a worker that isnt doing anythin
-	def getBuilder():
-		for id, ent in EntityManager.entities.items():
-			if(ent.type == "craftsman" and ent.profession == "builder" and not ent.working):
-				print("working")
-				return ent
-			else:
-				print("not working")
-				return False
+
+	#returns a worker that isnt doing anything
+	def getIdle(type= "", profession= ""):
+		for id, unit in EntityManager.entities.items():
+			if unit.m_currentState == Idle():
+				if type == "":
+					return unit
+				elif type == unit.type and profession == unit.profession:
+					return unit
+		if perf_counter() - EntityManager.idleCounter > 5:
+			EntityManager.idleCounter = perf_counter()
+			print("no idle unit found.. " + str(type))
 	
-
-
 	def Update():
+		if EntityManager.needExplorers:
+			unit = EntityManager.getIdle("worker")
+			if unit:
+				unit.changeType("explorer")
+				EntityManager.explorers += 1
+
+		if EntityManager.needBuilders:
+			unit = EntityManager.getIdle("worker")
+			if unit:
+				unit.changeType("builder")
+				EntityManager.builders += 1
+
+		if ResourceManager.needTrees and len(ResourceManager.treeLocations) > 0:
+			unit = EntityManager.getIdle("worker")
+			if unit:
+				unit.changeState(WGoToTree())
+
 		return
 		#Trains craftsman and explorers
 		if(EntityManager.builders < int(Configuration.config["aiData"]["builders"])):
@@ -136,8 +171,6 @@ class EntityManager:
 						break
 
 from basegameentity import *
-from config import Configuration
 from pathfinding import BreadthFirst
-import state
+
 import random
-from buildings import *

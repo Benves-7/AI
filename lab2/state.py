@@ -27,24 +27,23 @@ class State:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+class Idle(State):
+	def Enter(self, unit):
+		print(str(unit.ID) + " is idle.")
+	def Execute(self, unit):
+		pass
+	def Exit(self, unit):
+		print(str(unit.ID) + " is starting up again.")
 
-class EStart(State):
-	def Enter(self, explorer):
-		pass
-	def Execute(self, explorer):
-		pass
-	def Exit(self, explorer):
-		pass
-
+##======================================================
 #Craftsman states
 class CStart(State):
 	def Enter(self, craftsman):
-		pass
+		print(str(unit.ID) + " now a craftsman")
 	def Execute(self, craftsman):
 		pass
 	def Exit(self, craftsman):
 		pass
-
 class CMoveToKiln(State):
 	def Enter(self, craftsman):
 		pass
@@ -52,7 +51,13 @@ class CMoveToKiln(State):
 		pass
 	def Exit(self, craftsman):
 		pass
-
+class CMoveToSmith(State):
+	def Enter(self, builder):
+		pass
+	def Execute(self, builder):
+		pass
+	def Exit(self, builder):
+		pass
 class CWorking(State):
 	def Enter(self, worker):
 		pass
@@ -60,32 +65,37 @@ class CWorking(State):
 		pass
 	def Exit(self, worker):
 		pass
+
+##======================================================
 #Worker states
 class WStart(State):
 	def Enter(self, worker):
 		pass
 	def Execute(self, worker):
-		pass
+		worker.changeState(Idle())
 	def Exit(self, worker):
 		pass
-
 class WUpgradeToExplorer(State):
 
-	def Enter(self, worker):
+	def Enter(self, unit):
+		print(str(unit.ID) + " upgrading to explorer.")
+		unit.startTime = perf_counter()
+		unit.doneWhen = Configuration.config["upgradeTimes"]["explorer"]
+	def Execute(self, unit):
+		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.changeState(EStart())
+	def Exit(self, unit):
 		pass
-	def Execute(self, worker):
-		pass
-	def Exit(self, worker):
-		pass
-
 class WUpgradeToCraftsman(State):
-	def Enter(self, worker):
-		pass
-	def Execute(self, worker):
-		pass
-	def Exit(self, craftsman):
+	def Enter(self, unit):
+		print(str(unit.ID) + " upgrading to craftsman.")
+		unit.startTime = perf_counter()
+		unit.doneWhen = Configuration.config["upgradeTimes"]["explorer"]
+	def Execute(self, unit):
+		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.changeState(CStart())
+	def Exit(self, unit):
 		 pass
-
 class WCuttingTree(State):
 	def Enter(self, worker):
 		pass
@@ -93,7 +103,6 @@ class WCuttingTree(State):
 		pass
 	def Exit(self, worker):
 		pass
-
 class WMoveBackToTownHall(State):
 	def Enter(self, Entity):
 		pass
@@ -101,15 +110,23 @@ class WMoveBackToTownHall(State):
 		pass
 	def Exit(self, Entity):
 		pass
-
 class WGoToTree(State):
-	def Enter(self, Entity):
-		pass
+	def Enter(self, unit):
+		print(str(unit.ID) + " going to tree")
 	def Execute(self, Entity):
 		pass
 	def Exit(self, worker):
 		pass
+
+##======================================================
 #Builder states
+class BStart(State):
+	def Enter(self, builder):
+		pass
+	def Execute(self, builder):
+		pass
+	def Exit(self, builder):
+		pass
 class BBuildBuilding(State):
 	def Enter(self, builder):
 		pass
@@ -125,23 +142,30 @@ class BMoveBackToTownHall(State):
 	def Exit(self, Entity):
 		return
 
+##======================================================
 #Explorer states
-class Exploring(State):
-	def Enter(self, Entity):
+class EStart(State):
+	def Enter(self, unit):
+		print(str(unit.ID) + " now a explorer")
+	def Execute(self, unit):
+		unit.changeState(EExploring())
+	def Exit(self, unit):
 		pass
-	def Execute(self, Entity):
+class EExploring(State):
+	def Enter(self, unit):
+		unit.mapHandle
 		pass
-	def Exit(self, Entity):
+	def Execute(self, unit):
 		pass
-
-class Waiting(State):
+	def Exit(self, unit):
+		pass
+class EWaiting(State):
 	def Enter(self, worker):
 		worker.path = None
 	def Execute(self, worker):
 		return
 	def Exit(self, worker):
 		return
-
 
 
 
