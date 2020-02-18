@@ -3,7 +3,11 @@ from window import *
 from fileimporter import *
 from config import *
 from basegameentity import *
-from time import perf_counter
+from time import perf_counter, sleep
+import threading
+
+FRAMERATE = 30
+
 Configuration.open()
 mapHandle = MapHandle()
 windowHandle = Window()
@@ -13,22 +17,36 @@ mapHandle.addTrees(windowHandle, mapHandle)
 
 BaseGameEntity.setDependencies(grid, windowHandle, mapHandle)
 BaseGameEntity.placeStaticBuildings()
-
 unitList = []
 
-
-for x in range(0,25):
-	worker = Entity(x, "worker")
+for x in range(25):
+	worker = Entity(x, "worker", mapHandle, windowHandle)
 	EntityManager.addEntity(worker)
-	unitList.append(worker)
+	UnitManager.addUnit(worker)
 
-while(1):
+def managers():
+	while True:
+		start = perf_counter()
+		ResourceManager.Update()
+		BuildingManager.Update()
+		EntityManager.Update()
+		time = perf_counter() - start
+		if time < 0.016:
+			sleep(0.016-time)
 
-	for unit in unitList:
-		unit.Update()
+def units():
+	while True:
+		start = perf_counter()
+		UnitManager.Update()
+		time = perf_counter() - start
+		if time < 0.016:
+			sleep(0.016-time)
 
-	ResourceManager.Update()
-	BuildingManager.Update()
-	EntityManager.Update()
+def main():
+	while True:
+		windowHandle.updateWindow()
 
-	windowHandle.updateWindow()
+if __name__ == '__main__':
+	threading.Thread(target= managers).start()
+	threading.Thread(target= units).start()
+	main()

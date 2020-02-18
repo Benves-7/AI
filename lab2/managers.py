@@ -9,8 +9,17 @@ class Manager:
 	mapHandle = Window.mapHandle
 	mapGrid = []
 
-class ExplorerManager(Manager):
-	pass
+class UnitManager(Manager):
+	unitList = []
+	
+	def Update():
+		for unit in UnitManager.unitList:
+			unit.Update()
+
+	def addUnit(unit):
+		if Window.unitlist == []:
+			Window.unitlist = UnitManager.unitList
+		UnitManager.unitList.append(unit)
 
 class ResourceManager(Manager):
 	needCharcoal = False

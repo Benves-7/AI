@@ -1,6 +1,8 @@
-def BreadthFirst(map, width, heigth, start, goal):
-	goalIndex = goal
-	startIndex = start
+from maploader import *
+
+def BreadthFirst(mapHandle, start, goal):
+	goalIndex = goal.id
+	startIndex = start.id
 	frontier = Queue()
 	frontier.put(startIndex)
 	came_from = {}
@@ -8,7 +10,7 @@ def BreadthFirst(map, width, heigth, start, goal):
 
 	while not frontier.empty():
 		current = frontier.get()
-		for next in MapLoader.getNeighbours(current, map, width, heigth):
+		for next in mapHandle.getNeighbours(current):
 			if next not in came_from:
 				frontier.put(next)
 				came_from[next] = current
@@ -139,6 +141,6 @@ def RandomSearch(map, width, heigth, window):
 			return path
 		
 from queue import Queue
-from maploader import *
+
 import random
 from time import perf_counter

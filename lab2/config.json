@@ -1,14 +1,14 @@
 {
 	"windowParams":
 	{
-		"width": 1000,
-		"height": 1000,
+		"width": 1200,
+		"height": 1200,
 		"moveWindow": "+2000-400"
 		
 	},
 	"nodeTypes":
 	{
-		"mountain":
+		"border":
 		{
 			"color": "black",
 			"mSpeed": 0,
@@ -16,13 +16,21 @@
 			"trees": 0,
 			"fogOfWar": 0
 		},
+		"mountain":
+		{
+			"color": "gray25",
+			"mSpeed": 0,
+			"walkable": 0,
+			"trees": 0,
+			"fogOfWar": 1
+		},
 		"tree":
 		{
 			"color": "green2",
 			"mSpeed": 1,
 			"walkable": 1,
 			"trees": 1,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"water":
 		{
@@ -30,7 +38,7 @@
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"swamp":
 		{
@@ -38,7 +46,7 @@
 			"mSpeed": 0.5,
 			"walkable": 1,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"ground":
 		{
@@ -46,7 +54,7 @@
 			"mSpeed": 1,
 			"walkable": 1,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		}
 	},
 	"buildings":

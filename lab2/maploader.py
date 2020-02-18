@@ -1,5 +1,6 @@
 from config import *
 from random import randint, uniform
+from pathfinding import BreadthFirst
 
 #Created the map object and fills it with Nodes
 class MapHandle:
@@ -7,6 +8,7 @@ class MapHandle:
 	heigth = 0
 	grid = []
 	nextID = 0
+	removedID = []
 
 	def createGrid(self, lineString):
 		MapHandle.width = self.width = len(list(lineString[0]))
@@ -17,44 +19,48 @@ class MapHandle:
 			MapHandle.heigth = self.heigth = self.heigth + 1
 			for character in lineList:
 				#Each nodes parameters are from the config file
-				if character == "B":#Mountain
+				if character == "B":
+					border = parameters["border"]
+					self.grid.append(Node("border", border["trees"], bool(border["walkable"]), border["color"], self.nextID, border["mSpeed"], border["fogOfWar"]))
+				elif character == "M":#Mountain
 					mountain = parameters["mountain"]
-					self.grid.append(Node(mountain["trees"], bool(mountain["walkable"]), mountain["color"], self.nextID, mountain["mSpeed"], mountain["fogOfWar"]))
-				elif(character == "M"):#Ground
+					self.grid.append(Node("mountain", mountain["trees"], bool(mountain["walkable"]), mountain["color"], self.nextID, mountain["mSpeed"], mountain["fogOfWar"]))
+				elif(character == "G"):#Ground
 					ground = parameters["ground"]
-					self.grid.append(Node(ground["trees"], bool(ground["walkable"]), ground["color"], self.nextID, ground["mSpeed"], ground["fogOfWar"]))
+					self.grid.append(Node("ground", ground["trees"], bool(ground["walkable"]), ground["color"], self.nextID, ground["mSpeed"], ground["fogOfWar"]))
 				elif(character == "T"):#Tree
 					tree = parameters["tree"]
-					self.grid.append(Node(tree["trees"], bool(tree["walkable"]), tree["color"], self.nextID, tree["mSpeed"], tree["fogOfWar"]))
-				elif(character == "G"):#Swamp
+					self.grid.append(Node("tree", tree["trees"], bool(tree["walkable"]), tree["color"], self.nextID, tree["mSpeed"], tree["fogOfWar"]))
+				elif(character == "S"):#Swamp
 					swamp = parameters["swamp"]
-					self.grid.append(Node(swamp["trees"], bool(swamp["walkable"]), swamp["color"], self.nextID, swamp["mSpeed"], swamp["fogOfWar"]))
-				elif(character == "V"):#Water
+					self.grid.append(Node("swamp", swamp["trees"], bool(swamp["walkable"]), swamp["color"], self.nextID, swamp["mSpeed"], swamp["fogOfWar"]))
+				elif(character == "W"):#Water
 					water = parameters["water"]
-					self.grid.append(Node(water["trees"], bool(water["walkable"]), water["color"], self.nextID, water["mSpeed"], water["fogOfWar"]))
+					self.grid.append(Node("water", water["trees"], bool(water["walkable"]), water["color"], self.nextID, water["mSpeed"], water["fogOfWar"]))
 				self.nextID += 1
 		return self.grid
+
 	def addTrees(self, windowHandle, mapHandle): #windowWidth, windowHeight, mapWidth, mapHeight):
 		for node in self.grid:
 			if(node.isTree):
 				for x in range(0,5):
 					node.trees.append(TreeNode(node, windowHandle, mapHandle))  #windowWidth, windowHeight, mapWidth, mapHeight))
 
-	def getNeighbours(id):
-		map = MapHandle.grid
-		width = MapHandle.width
+	def getNeighbours(self, id):
+		map = self.grid
+		width = self.width
 		neighbours = []
-		if(map[id - 1].isWalkable == True and not map[id - 1].fogOfWar): #Left of
+		if(map[id - 1].isWalkable): #Left of
 			neighbours.append(id-1)
-		if(map[id - width].isWalkable == True and not map[id - width].fogOfWar): #Above
-			neighbours.append(id - MapHandle.width)
-		if(map[id + 1].isWalkable == True and not map[id + 1].fogOfWar): #Right of
+		if(map[id - width].isWalkable): #Above
+			neighbours.append(id - width)
+		if(map[id + 1].isWalkable): #Right of
 			neighbours.append(id+1)
-		if(map[id + width].isWalkable == True and not map[id + width].fogOfWar): #Below
-			neighbours.append(id + MapHandle.width)
+		if(map[id + width].isWalkable): #Below
+			neighbours.append(id + width)
 
 		return neighbours
-	def getAllNeighbours(id): #returns a list of all neighbours vertical, horizontal and diagonal
+	def getAllNeighbours(self, id): #returns a list of all neighbours vertical, horizontal and diagonal
 		map = MapHandle.grid
 		width = MapHandle.width
 		neighbours = []
@@ -85,14 +91,33 @@ class MapHandle:
 
 		return neighbours 
 
-	def getRandomNode(id): #return random node ID within range..
-		ychange = randint(-5, 5)
-		xchange = randint(-5, 5)
-		newID = id + xchange + (ychange*MapHandle.width)
-		# if newID >
-		# TODO: check to see if newID is inrange of old ID, aswell as inside the grid..
-		MapHandle.grid[1]
-		pass
+	def getPath(self, unit):
+		unit.startNode = self.grid[unit.nodeId]
+		unit.endNode = self.getRandomNode(unit.nodeId)
+		if unit.endNode:
+			return self.searchForPath(unit.startNode, unit.endNode)
+		else:
+			return False
+
+	def getRandomNode(self, id): #return random node ID within range..
+		break_counter = 0
+		while True:
+			ychange = randint(-5, 5)
+			xchange = randint(-5, 5)
+			newID = id + xchange + (ychange*MapHandle.width)
+			size = len(self.grid)
+
+			if newID in MapHandle.removedID or newID < 0 or newID > size or not self.grid[newID].isWalkable:
+				MapHandle.removedID.append(newID)
+				break_counter += 1
+			else:
+				return MapHandle.grid[newID]
+
+			if break_counter >= 10:
+				return False
+
+	def searchForPath(self, startNode, endNode):
+		return BreadthFirst(self, startNode, endNode)
 
 	#returns the manhattan distance between two nodes
 	def getDistance(nodeA, nodeB):
@@ -122,8 +147,11 @@ class Node:
 	x = 0
 	y = 0
 
+	pos = []
+	shape = None
 
-	def __init__(self, tree, walkable, color, id, speed, fogOfWar):
+	def __init__(self, type, tree, walkable, color, id, speed, fogOfWar):
+		self.type = type
 		self.isTree = tree
 		self.isWalkable = walkable
 		self.color = color
@@ -143,8 +171,7 @@ class TreeNode:
 		self.parent = node
 		self.widthOfNode = windowHandle.indentX
 		self.heigthOfNode = windowHandle.indentY
-		pos = self.randomTreePos()
-		self.shape = windowHandle.window.create_oval(pos[0], pos[1], pos[2], pos[3], fill= "green3")
+		self.pos = self.randomTreePos()
 		
 	def randomTreePos(self):
 		self.x = x = uniform(self.parent.x*self.widthOfNode, (self.parent.x+1)*self.widthOfNode)

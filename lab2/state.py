@@ -29,12 +29,13 @@ class State:
 
 class Idle(State):
 	def Enter(self, unit):
-		print(str(unit.ID) + " is idle.")
+		pass
+		#print(str(unit.ID) + " is idle.")
 	def Execute(self, unit):
 		pass
 	def Exit(self, unit):
-		print(str(unit.ID) + " is starting up again.")
-
+		#print(str(unit.ID) + " is starting up again.")
+		pass
 ##======================================================
 #Craftsman states
 class CStart(State):
@@ -78,7 +79,7 @@ class WStart(State):
 class WUpgradeToExplorer(State):
 
 	def Enter(self, unit):
-		print(str(unit.ID) + " upgrading to explorer.")
+		#print(str(unit.ID) + ": upgrading to explorer.")
 		unit.startTime = perf_counter()
 		unit.doneWhen = Configuration.config["upgradeTimes"]["explorer"]
 	def Execute(self, unit):
@@ -146,26 +147,46 @@ class BMoveBackToTownHall(State):
 #Explorer states
 class EStart(State):
 	def Enter(self, unit):
-		print(str(unit.ID) + " now a explorer")
+		pass
+		#print(str(unit.ID) + ": now a explorer")
+
 	def Execute(self, unit):
 		unit.changeState(EExploring())
+
 	def Exit(self, unit):
 		pass
 class EExploring(State):
 	def Enter(self, unit):
-		unit.mapHandle
-		pass
+		unit.path = unit.mapHandle.getPath(unit)
+		if unit.path:
+			unit.path.pop(0)
+		else:
+			unit.changeState(EWaiting())
+
 	def Execute(self, unit):
-		pass
+		if len(unit.path) < 1:
+			#print(str(unit.ID) + ": done..")
+			unit.changeState(EWaiting())
+		if unit.MoveTo():
+			unit.nodeId = unit.path[0]
+			unit.path.pop(0)
+			unit.exploreCloseNodes()
+			
+
+
 	def Exit(self, unit):
 		pass
+
 class EWaiting(State):
-	def Enter(self, worker):
-		worker.path = None
-	def Execute(self, worker):
-		return
-	def Exit(self, worker):
-		return
+	def Enter(self, unit):
+		pass
+		#print(str(unit.ID) + ": waiting for path")
+
+	def Execute(self, unit):
+		unit.changeState(EExploring())
+
+	def Exit(self, unit):
+		pass
 
 
 
