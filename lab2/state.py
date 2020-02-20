@@ -29,12 +29,11 @@ class State:
 
 class Idle(State):
 	def Enter(self, unit):
+		print(str(unit.ID) + " is idle.")
 		pass
-		#print(str(unit.ID) + " is idle.")
 	def Execute(self, unit):
 		pass
 	def Exit(self, unit):
-		#print(str(unit.ID) + " is starting up again.")
 		pass
 ##======================================================
 #Craftsman states
@@ -82,9 +81,11 @@ class WUpgradeToExplorer(State):
 		#print(str(unit.ID) + ": upgrading to explorer.")
 		unit.startTime = perf_counter()
 		unit.doneWhen = Configuration.config["upgradeTimes"]["explorer"]
+	
 	def Execute(self, unit):
 		if perf_counter() - unit.startTime > unit.doneWhen:
 			unit.changeState(EStart())
+
 	def Exit(self, unit):
 		pass
 class WUpgradeToCraftsman(State):
@@ -98,25 +99,60 @@ class WUpgradeToCraftsman(State):
 	def Exit(self, unit):
 		 pass
 class WCuttingTree(State):
-	def Enter(self, worker):
+	def Enter(self, unit):
+		unit.startTime = perf_counter()
+		unit.doneWhen = Configuration.config["workTime"]["woodChop"]
+
+	def Execute(self, unit):
+		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.destroyTrees.append(unit.endNode.trees.pop())
+			unit.changeState(WMoveBackToTownHall())
+			
+	def Exit(self, unit):
 		pass
-	def Execute(self, worker):
-		pass
-	def Exit(self, worker):
-		pass
+
 class WMoveBackToTownHall(State):
-	def Enter(self, Entity):
+	def Enter(self, unit):
+		unit.path = unit.mapHandle.findHome(unit)
+		if unit.path:
+			unit.path.pop(0)
+			unit.tryagain = False
+		else:
+			unit.tryagain = True
+
+	def Execute(self, unit):
+		if not unit.tryagain:
+			if len(unit.path) < 1:	# never enters..
+				TownHall.trees += 1
+				print(TownHall.trees)
+				unit.changeState(Idle())
+			elif unit.MoveTo():
+				unit.nodeId = unit.path[0]
+				unit.path.pop(0)
+				unit.exploreCloseNodes()
+		else:
+			unit.changeState(WMoveBackToTownHall())
+
+	def Exit(self, unit):
 		pass
-	def Execute(self, Entity):
-		pass
-	def Exit(self, Entity):
-		pass
+
 class WGoToTree(State):
 	def Enter(self, unit):
-		print(str(unit.ID) + " going to tree")
-	def Execute(self, Entity):
-		pass
-	def Exit(self, worker):
+		unit.path = unit.mapHandle.findTree(unit)
+		if unit.path:
+			unit.path.pop(0)
+		else:
+			unit.changeState(Idle())
+
+	def Execute(self, unit):
+		if len(unit.path) < 1:
+			unit.changeState(WCuttingTree())
+		elif unit.MoveTo():
+			unit.nodeId = unit.path[0]
+			unit.path.pop(0)
+			unit.exploreCloseNodes()
+
+	def Exit(self, unit):
 		pass
 
 ##======================================================
@@ -124,22 +160,30 @@ class WGoToTree(State):
 class BStart(State):
 	def Enter(self, builder):
 		pass
+
 	def Execute(self, builder):
 		pass
+
 	def Exit(self, builder):
 		pass
+
 class BBuildBuilding(State):
 	def Enter(self, builder):
 		pass
+
 	def Execute(self, builder):
 		pass
+
 	def Exit(self, builder):
 		pass
+
 class BMoveBackToTownHall(State):
 	def Enter(self, builder):
 		pass
+
 	def Execute(self, builder):
 		pass
+
 	def Exit(self, Entity):
 		return
 
@@ -148,16 +192,16 @@ class BMoveBackToTownHall(State):
 class EStart(State):
 	def Enter(self, unit):
 		pass
-		#print(str(unit.ID) + ": now a explorer")
 
 	def Execute(self, unit):
 		unit.changeState(EExploring())
 
 	def Exit(self, unit):
 		pass
+
 class EExploring(State):
 	def Enter(self, unit):
-		unit.path = unit.mapHandle.getPath(unit)
+		unit.path = unit.mapHandle.findExploration(unit)
 		if unit.path:
 			unit.path.pop(0)
 		else:
@@ -165,22 +209,18 @@ class EExploring(State):
 
 	def Execute(self, unit):
 		if len(unit.path) < 1:
-			#print(str(unit.ID) + ": done..")
 			unit.changeState(EWaiting())
-		if unit.MoveTo():
+		elif unit.MoveTo():
 			unit.nodeId = unit.path[0]
 			unit.path.pop(0)
 			unit.exploreCloseNodes()
 			
-
-
 	def Exit(self, unit):
 		pass
 
 class EWaiting(State):
 	def Enter(self, unit):
 		pass
-		#print(str(unit.ID) + ": waiting for path")
 
 	def Execute(self, unit):
 		unit.changeState(EExploring())

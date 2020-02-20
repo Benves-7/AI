@@ -1,6 +1,6 @@
 from timeManager import *
 import random
-from managers import EntityManager
+
 class MessageDispatcher:
 	delayedMessages = []
 

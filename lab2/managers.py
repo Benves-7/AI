@@ -28,21 +28,27 @@ class ResourceManager(Manager):
 
 	#When an explorer finds a tree its location is saved inside this list
 	treeLocations = []
+	numKnownTrees = 0
+
 	#this function finds the closest tree to the provided worker and returns its index inside the map
-	def getClosestTree(worker, currentNode):
+	def getClosestTree(unit):
+		currentTile =  BaseGameEntity.map[unit.nodeId]
 		distance = len(BaseGameEntity.map)
-		closestNode = None
-		for node in ResourceManager.treeLocations:
-			if(BaseGameEntity.map[node].reservedTrees < 5):
-				distanceToTree = abs(BaseGameEntity.map[node].x - BaseGameEntity.map[currentNode].x) + abs(BaseGameEntity.map[node].y - BaseGameEntity.map[currentNode].y)
+		closestTile = None
+		for tile in ResourceManager.treeLocations:
+			if(tile.reservedTrees < len(tile.trees)):
+				distanceToTree = abs(tile.x - currentTile.x) + abs(tile.y - currentTile.y)
 				if(distanceToTree < distance):
 					distance = distanceToTree
-					closestNode = node
+					closestTile = tile
+
 		if(distance == len(BaseGameEntity.map)):
 			return False
 		else:
-			#BaseGameEntity.map[closestNode].reservedTrees += 1
-			return closestNode
+			closestTile.reservedTrees += 1
+			ResourceManager.numKnownTrees -= 1
+			return closestTile
+
 	#If a worker isn't doing anything make it search for a tree to cut down
 	def Update():
 		if TownHall.charcoal <= 200:
@@ -148,37 +154,39 @@ class EntityManager(Manager):
 				unit.changeType("builder")
 				EntityManager.builders += 1
 
-		if ResourceManager.needTrees and len(ResourceManager.treeLocations) > 0:
+		if ResourceManager.needTrees and ResourceManager.numKnownTrees > 0:
 			unit = EntityManager.getIdle("worker")
 			if unit:
 				unit.changeState(WGoToTree())
 
 		return
+
+
 		#Trains craftsman and explorers
-		if(EntityManager.builders < int(Configuration.config["aiData"]["builders"])):
-			for id, ent in EntityManager.entities.items():
-				if(ent.type == "worker" and ent.m_currentState == state.Waiting() and EntityManager.builders < int(Configuration.config["aiData"]["builders"])):
-					EntityManager.builders += 1
-					EntityManager.workers -= 1
-					#ent.playerCircle.setFill("black")
-					ent.changeType("craftsman", "builder")
-
-				elif(ent.type == "worker" and ent.m_currentState == state.Waiting() and EntityManager.explorers < int(Configuration.config["aiData"]["explorers"])):
-					EntityManager.explorers += 1
-					EntityManager.workers -= 1
-					#ent.playerCircle.setFill("yellow")
-					ent.changeType("explorer")
-		#trains a kiln operator if one is needed
-		for id, building in BuildingManager.buildings.items():
-			if(building.type == "kiln" and building.complete and not building.populated):
-				for id, ent in EntityManager.entities.items():
-					if(ent.type == "worker" and (ent.m_currentState == state.Waiting() or ent.m_currentState == state.WMoveBackToTownHall())):
-						building.populated = True
-						ent.playerCircle.setFill("black")
-						ent.path = BreadthFirst(BaseGameEntity.map, BaseGameEntity.width, BaseGameEntity.height, ent.pointIndex, building.position)
-						ent.changeType("craftsman", "kilnOperator")
-						break
-
+	#	if(EntityManager.builders < int(Configuration.config["aiData"]["builders"])):
+	#		for id, ent in EntityManager.entities.items():
+	#			if(ent.type == "worker" and ent.m_currentState == state.Waiting() and EntityManager.builders < int(Configuration.config["aiData"]["builders"])):
+	#				EntityManager.builders += 1
+	#				EntityManager.workers -= 1
+	#				#ent.playerCircle.setFill("black")
+	#				ent.changeType("craftsman", "builder")
+	#
+	#			elif(ent.type == "worker" and ent.m_currentState == state.Waiting() and EntityManager.explorers < int(Configuration.config["aiData"]["explorers"])):
+	#				EntityManager.explorers += 1
+	#				EntityManager.workers -= 1
+	#				#ent.playerCircle.setFill("yellow")
+	#				ent.changeType("explorer")
+	#	#trains a kiln operator if one is needed
+	#	for id, building in BuildingManager.buildings.items():
+	#		if(building.type == "kiln" and building.complete and not building.populated):
+	#			for id, ent in EntityManager.entities.items():
+	#				if(ent.type == "worker" and (ent.m_currentState == state.Waiting() or ent.m_currentState == state.WMoveBackToTownHall())):
+	#					building.populated = True
+	#					ent.playerCircle.setFill("black")
+	#					ent.path = BreadthFirst(BaseGameEntity.map, BaseGameEntity.width, BaseGameEntity.height, ent.pointIndex, building.position)
+	#					ent.changeType("craftsman", "kilnOperator")
+	#					break
+	
 from basegameentity import *
 from pathfinding import BreadthFirst
 

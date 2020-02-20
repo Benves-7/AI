@@ -1,10 +1,11 @@
 from tkinter import *
 from config import *
-from managers import *
+import managers
 from time import perf_counter
 
 class Window:
 	mapHandle = None
+
 	unitlist = []
 	exploredID = []
 
@@ -13,6 +14,7 @@ class Window:
 	widthP = None
 	indentX = 0
 	indentY = 0
+
 	#Load the window size from the config
 	def __init__(self):
 		self.heigthP = Configuration.config["windowParams"]["height"]
@@ -47,6 +49,9 @@ class Window:
 		for unit in self.unitlist:
 			delta = unit.getMove()
 			self.window.move(unit.shape, delta[0], delta[1])
+			for tree in unit.destroyTrees:
+				self.window.delete(tree.shape)
+
 		start = perf_counter()
 		for id in self.exploredID:
 			tile = self.mapHandle.grid[id]
@@ -55,12 +60,13 @@ class Window:
 			else:
 				self.window.itemconfig(tile.shape, fill= tile.color)
 				if tile.type == "tree":
+					managers.ResourceManager.treeLocations.append(tile)
 					for tree in tile.trees:
+						managers.ResourceManager.numKnownTrees += 1
 						pos = tree.pos
-						self.window.create_oval(pos[0], pos[1], pos[2], pos[3], fill= "green3")
+						tree.shape = self.window.create_oval(pos[0], pos[1], pos[2], pos[3], fill= "green3")
 			self.exploredID.remove(id)
 			if perf_counter()-start > 0.016:
 				break
-			
 		self.window.update()
 

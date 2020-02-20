@@ -33,6 +33,7 @@ class TownHall(Building):
 	trees = 0
 	ironOre = 0
 	ironBars = 0
+
 	def __init__(self, nodeId):
 		#Load the position of the town hall from the config file
 		TownHall.nodeId = self.nodeId = nodeId

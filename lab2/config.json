@@ -1,55 +1,45 @@
 {
-	"windowParams":
-	{
-		"width": 1200,
-		"height": 1200,
-		"moveWindow": "+2000-400"
-		
+	"windowParams": {
+		"width": 800,
+		"height": 800
 	},
-	"nodeTypes":
-	{
-		"border":
-		{
+	"nodeTypes": {
+		"border": {
 			"color": "black",
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
 			"fogOfWar": 0
 		},
-		"mountain":
-		{
+		"mountain": {
 			"color": "gray25",
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
 			"fogOfWar": 1
 		},
-		"tree":
-		{
+		"tree": {
 			"color": "green2",
 			"mSpeed": 1,
 			"walkable": 1,
 			"trees": 1,
 			"fogOfWar": 1
 		},
-		"water":
-		{
+		"water": {
 			"color": "deep sky blue",
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
 			"fogOfWar": 1
 		},
-		"swamp":
-		{
+		"swamp": {
 			"color": "DarkOrange3",
 			"mSpeed": 0.5,
 			"walkable": 1,
 			"trees": 0,
 			"fogOfWar": 1
 		},
-		"ground":
-		{
+		"ground": {
 			"color": "lawn green",
 			"mSpeed": 1,
 			"walkable": 1,
@@ -57,33 +47,31 @@
 			"fogOfWar": 1
 		}
 	},
-	"buildings":
-	{
-		"townHall":
-		{
+	"buildings": {
+		"townHall": {
 			"position": 2020,
 			"color": "cyan"
 		},
-		"kiln":
-		{
+		"kiln": {
 			"color": "cadet blue",
 			"cost": 10,
 			"time": 5,
 			"timeToMakeCoal": 5
 		}
 	},
-	"upgradeTimes":
-	{
-		"craftsman":5,
+	"workTime": {
+		"woodChop": 5,
+		"smelting": 5,
+		"smithing": 10
+	},
+	"upgradeTimes": {
+		"craftsman": 5,
 		"explorer": 5
 	},
-	"aiData":
-	{
+	"aiData": {
 		"explorers": 3,
 		"craftsman": 1,
-		"builders":1,
+		"builders": 1,
 		"kilns": 1
 	}
-
-			
 }		

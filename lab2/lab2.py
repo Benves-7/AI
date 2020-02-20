@@ -2,6 +2,7 @@ from maploader import *
 from window import *
 from fileimporter import *
 from config import *
+from managers import *
 from basegameentity import *
 from time import perf_counter, sleep
 import threading
@@ -47,6 +48,7 @@ def main():
 		windowHandle.updateWindow()
 
 if __name__ == '__main__':
+
 	threading.Thread(target= managers).start()
 	threading.Thread(target= units).start()
 	main()

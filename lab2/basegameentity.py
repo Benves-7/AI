@@ -7,13 +7,11 @@ class BaseGameEntity:
 	windowClass = 0
 	townHall = None
 	mapHandle = None
-	#path = None
 
 	def __init__(self, ID, mapHandle, windowHandle):
 		self.setID(ID)
 		self.mapHandle = mapHandle
 		self.windowClass = windowHandle
-		self.size = [Window.indentX/2, Window.indentY/2]
 	
 	#Place buildings that should be placed before the simulation starts
 	def placeStaticBuildings():
@@ -58,16 +56,16 @@ class BaseGameEntity:
 
 		return self.point.getX() == self.map[self.path[0]].center.getX() and self.point.getY() == self.map[self.path[0]].center.getY() 
 
-
-
-
 class Entity(BaseGameEntity):
 	def __init__(self, id, type, mapHandle, windowHandle, profession = ""):
 		BaseGameEntity.__init__(self, id, mapHandle, windowHandle)
 		self.type = type
 		self.profession = profession
 		self.startTime = None
-		
+		self.size = [Window.indentX/2, Window.indentY/2]
+
+		self.destroyTrees = []
+
 		self.position = self.spawnPos()
 		self.lastPosition = self.spawnPos()
 		
@@ -170,28 +168,9 @@ class Entity(BaseGameEntity):
 				tile.fogOfWar = False
 				Window.exploredID.append(nodeID)
 
-		#If any of the nodes are tree nodes add the trees to the map
-		#for x in neighbours:
-		#	self.windowClass.window.items[x].setFill(color_rgb(self.map[x].color[0], self.map[x].color[1], self.map[x].color[2]))
-		#	BaseGameEntity.map[x].fogOfWar = False
-		#	#If the node is a tree node draw the trees
-		#	if(BaseGameEntity.map[x].isTree):
-		#		#Add the tree locations to the resource managers list of trees
-		#		ResourceManager.treeLocations.append(x)
-		#		for tree in BaseGameEntity.map[x].trees:
-		#			tree.point.draw(BaseGameEntity.windowClass.window)
-		#			#tree.point.undraw()
-
-			
-
-
-
-
 import state
-import messaging
 from math import *
 from graphics import *
 from managers import *
 from config import *
 from buildings import *
-

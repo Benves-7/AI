@@ -1,4 +1,5 @@
 from config import *
+from managers import *
 from random import randint, uniform
 from pathfinding import BreadthFirst
 
@@ -91,7 +92,7 @@ class MapHandle:
 
 		return neighbours 
 
-	def getPath(self, unit):
+	def findExploration(self, unit):
 		unit.startNode = self.grid[unit.nodeId]
 		unit.endNode = self.getRandomNode(unit.nodeId)
 		if unit.endNode:
@@ -118,6 +119,20 @@ class MapHandle:
 
 	def searchForPath(self, startNode, endNode):
 		return BreadthFirst(self, startNode, endNode)
+
+	def findTree(self, unit):
+		unit.startNode = self.grid[unit.nodeId]
+		unit.endNode = ResourceManager.getClosestTree(unit)
+		if unit.endNode:
+			return self.searchForPath(unit.startNode, unit.endNode)
+		else:
+			return False
+
+	def findHome(self, unit):
+		unit.startNode = self.grid[unit.nodeId]
+		unit.endNode = self.grid[TownHall.nodeId]
+		return self.searchForPath(unit.startNode, unit.endNode)
+
 
 	#returns the manhattan distance between two nodes
 	def getDistance(nodeA, nodeB):
@@ -163,9 +178,11 @@ class Node:
 		self.trees = []
 		self.building = None
 		self.reservedTrees = 0
+
 # Randomizes a position inside a node when created
 class TreeNode:
 	size = 4
+	shape = None
 
 	def __init__(self, node, windowHandle, mapHandle):
 		self.parent = node
@@ -182,4 +199,3 @@ class TreeNode:
 import messaging
 from math import *
 from graphics import *
-from managers import *
