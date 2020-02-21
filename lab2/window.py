@@ -43,7 +43,7 @@ class Window:
 				if(node.fogOfWar):
 					window.itemconfig(node.shape, fill= 'gray50')
 				else:
-					window.itemconfig(node.shape, fill= node.color)
+					window.itemconfig(node.shape, fill= node.color, outline= "")
 
 	def updateWindow(self):
 		for unit in self.unitlist:

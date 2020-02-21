@@ -1,9 +1,11 @@
 {
+	"map": "map.txt",
+	"mapimage": "MapImage.png",
 	"windowParams": {
 		"width": 800,
 		"height": 800
 	},
-	"nodeTypes": {
+	"tileTypes": {
 		"border": {
 			"color": "black",
 			"mSpeed": 0,
@@ -16,47 +18,47 @@
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
-		"tree": {
+		"wood": {
 			"color": "green2",
 			"mSpeed": 1,
 			"walkable": 1,
 			"trees": 1,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"water": {
 			"color": "deep sky blue",
 			"mSpeed": 0,
 			"walkable": 0,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"swamp": {
 			"color": "DarkOrange3",
 			"mSpeed": 0.5,
 			"walkable": 1,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		},
 		"ground": {
 			"color": "lawn green",
 			"mSpeed": 1,
 			"walkable": 1,
 			"trees": 0,
-			"fogOfWar": 0
+			"fogOfWar": 1
 		}
 	},
 	"buildings": {
 		"townHall": {
-			"position": 2020,
-			"color": "cyan"
+			"nodeId": 2020,
+			"size": 8,
+			"color": "orange"
 		},
 		"kiln": {
 			"color": "cadet blue",
-			"cost": 10,
-			"time": 5,
-			"timeToMakeCoal": 5
+			"cost": 100,
+			"time": 15
 		}
 	},
 	"workTime": {
@@ -68,7 +70,12 @@
 		"craftsman": 5,
 		"explorer": 5
 	},
+	"unitData": {
+		"size": 5,
+		"color": "yellow"
+	},
 	"aiData": {
+		"startUnit": 25,
 		"explorers": 3,
 		"craftsman": 1,
 		"builders": 1,

@@ -123,7 +123,6 @@ class Entity(BaseGameEntity):
 		self.lastPosition[1] = self.position[1]
 
 		return [dx,dy]
-		pass
 
 		#Follows a path and returns true when it has reached the next point
 	def MoveTo(self):

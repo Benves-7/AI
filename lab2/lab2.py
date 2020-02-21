@@ -7,7 +7,6 @@ from basegameentity import *
 from time import perf_counter, sleep
 import threading
 
-FRAMERATE = 30
 
 Configuration.open()
 mapHandle = MapHandle()
