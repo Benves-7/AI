@@ -1,6 +1,3 @@
-
-
-
 class State:
 	def messageRecvd(message):#Check what the message contains and act accordingly
 		#Type 1: request, Type 2: ack, Type 3: go now, Type 4: leave

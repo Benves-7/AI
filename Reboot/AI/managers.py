@@ -1,6 +1,3 @@
-from config import *
-from states import *
-
 class Manager:
 	def update():
 		print("Base update.. ERROR")
@@ -28,39 +25,47 @@ class UnitManager(Manager):
 		if perf_counter() - UnitManager.idleCounter > 5:
 			UnitManager.idleCounter = perf_counter()
 			print("no idle unit of type " + str(type) + " found...")
-	
+		return False
+
 	def addUnit(unit):
 		UnitManager.unitList.append(unit)
 
+	def upgrade():
+		if (ResourceManager.needWood or ResourceManager.needIron) and UnitManager.explorers < Config.config["aiData"]["explorers"]:
+			unit = UnitManager.getIdle("worker")
+			if unit:
+				unit.changeType("explorer")
+				UnitManager.explorers += 1
+
+		if BuildingManager.needBuilder and UnitManager.craftsman < Config.config["aiData"]["craftsman"]:
+				unit = UnitManager.getIdle("worker")
+				if unit:
+					unit.changeType("craftsman", "builder")
+					UnitManager.craftsman += 1
+
+	def assignWork():
+		for unit in UnitManager.unitList:
+			if unit.currentState == Idle():
+				if BuildingManager.needBuilder and unit.type == "craftsman":
+					unit.profession = "builder"
+					unit.changeState(BMoveToBuilding())
+
+				elif ResourceManager.needCharcoal and BuildingManager.numKilns > 0 and unit.type == "craftsman" and ResourceManager.wood >= 1:
+					unit.profession = "crafter"
+					unit.changeState(CMoveToKiln())
+
+				elif ResourceManager.needWood and ResourceManager.numOfTrees > 0 and unit.type == "worker":
+					unit.changeState(WGoToTree())
+
 	def update():
-		if ResourceManager.needWood and ResourceManager.numOfTrees <= 5 and UnitManager.explorers < Config.config["aiData"]["explorers"]:
-			unit = UnitManager.getIdle()
-			unit.changeState(WUpgradeToExplorer())
-			UnitManager.explorers += 1
-
-		if ResourceManager.needIron and ResourceManager.numOfIron <= 5 and UnitManager.explorers < Config.config["aiData"]["explorers"]:
-			unit = UnitManager.getIdle()
-			unit.changeState(WUpgradeToExplorer())
-			UnitManager.explorers += 1
-
-		if ResourceManager.needCharcoal and BuildingManager.kilns >= 1 and UnitManager.craftsman < Config.config["aiData"]["craftsman"]:
-			unit = UnitManager.getIdle()
-			unit.changeState(WUpgradeToCraftsman())
-			UnitManager.craftsman += 1
-
-		if ResourceManager.needSword and BuildingManager.smithy >= 1 and UnitManager.craftsman < Config.config["aiData"]["craftsman"]:
-			unit = UnitManager.getIdle()
-			unit.changeState(WUpgradeToCraftsman())
-			UnitManager.craftsman += 1
-
-
+		UnitManager.upgrade()
+		UnitManager.assignWork()
 		for unit in UnitManager.unitList:
 			unit.update()
 
-
 class ResourceManager(Manager):
 	# resources
-	wood = 0
+	wood = 100
 	charcoal = 0
 	ironore = 0
 	swords = 0
@@ -78,17 +83,19 @@ class ResourceManager(Manager):
 	numOfIron = 0
 
 	def getClosestTree(unit):
-		if treeLocations == []:
+		if ResourceManager.treeLocations == []:
 			return False
-		currentTile = MapHandle.grid[unit.nodeId]
+		currentTile = MapHandle.grid[unit.tileId]
 		distance = len(MapHandle.grid)
 		closestTile = None
-		for tile in ResourceManager.treelocations:
+		for tile in ResourceManager.treeLocations:
 			if tile.reservedTrees < len(tile.trees):
 				distanceToTree = abs(tile.xy[0] - currentTile.xy[0]) + abs(tile.xy[1] - currentTile.xy[1])
 				if(distanceToTree < distance):
 					distance = distanceToTree
-					cclosestTile = tile
+					closestTile = tile
+			else:
+				ResourceManager.treeLocations.remove(tile)
 
 		if(distance == len(MapHandle.grid)):
 			return False
@@ -122,25 +129,50 @@ class ResourceManager(Manager):
 class BuildingManager(Manager):
 	config = None
 
-	kilns = 0
-	smithy = 0
-	townhall = 0
+	numKilns = 0
+	numSmithy = 0
+	numTownhall = 0
+
+	needBuilder = False
+	needKiln = False
+	needSmithy = False
 
 	buildings = []
+	unfinishedBuilding = []
+	townhall = None
 
 	def addBuilding(building):
 		if BuildingManager.config == None:
 			BuildingManager.config = Config.config["buildings"]
 
-		BuildingManager.buildings.append(building)
+		BuildingManager.unfinishedBuilding = building
 		if building.type == "kiln":
-			BuildingManager.kilns += 1
+			BuildingManager.numKilns += 1
 		elif building.type == "smithy":
-			BuildingManager.smithy += 1
+			BuildingManager.numSmithy += 1
 		elif building.type == "townhall":
-			BuildingManager.townhall += 1
+			BuildingManager.buildings.append(building)
+			BuildingManager.unfinishedBuilding = None
+			BuildingManager.townhall = building
+			BuildingManager.numTownhall += 1
+
+	def completeBuilding():
+		BuildingManager.unfinishedBuilding.done = True
+		BuildingManager.buildings.append(BuildingManager.unfinishedBuilding)
+		BuildingManager.needBuilder = False
 
 	def update():
 		config = BuildingManager.config
-		if ResourceManager.wood >= config["kiln"]["cost"]:
-			pass
+		if ResourceManager.wood >= config["kiln"]["cost"] and BuildingManager.numKilns < config["kiln"]["num"]:
+			BuildingManager.needBuilder = True
+			if BuildingManager.unfinishedBuilding == None:
+				BuildingManager.addBuilding(Kiln(Config.nextID))
+
+class WindowManager(Manager):
+	def update(fps_limit):
+		WindowHandle.update(fps_limit)
+
+
+from config import *
+from states import *
+from basegameentity import *

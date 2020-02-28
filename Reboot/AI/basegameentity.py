@@ -1,7 +1,3 @@
-from config import *
-from random import uniform
-from states import WStart
-
 ##===================================================
 # Base GameEntity class
 class BaseGameEntity:
@@ -35,7 +31,8 @@ class BaseGameEntity:
 			tile = localMap[tileId]
 			if tile.fogOfWar:
 				tile.fogOfWar = False
-				WindowHandle.exploredTiles.append(tile)
+
+				WindowHandle.removeShapes.append(tile.shape)
 
 	def update(self):
 		print("Base update.. ERROR")
@@ -53,7 +50,9 @@ class Unit(BaseGameEntity):
 		self.doneWhen = None
 		sizeConfig = Config.config["unitData"]["size"]
 		size = [WindowHandle.indent[0]/10*sizeConfig/2, WindowHandle.indent[1]/10*sizeConfig/2]
-		self.shape = WindowHandle.window.create_oval(self.position[0]-size[0], self.position[1]-size[1], self.position[0]+size[0], self.position[1]+size[1], fill= Config.config["unitData"]["color"])
+		self.colorChange = False
+		self.color = Config.config["unitData"]["Wcolor"]
+		self.shape = WindowHandle.window.create_oval(self.position[0]-size[0], self.position[1]-size[1], self.position[0]+size[0], self.position[1]+size[1], fill= self.color)
 		self.tileId = townhall.tileId
 		self.path = []
 		self.currentState = WStart()
@@ -67,11 +66,11 @@ class Unit(BaseGameEntity):
 	def changeType(self, type, profession = ""):
 		if(type == "explorer"):
 			self.type = "explorer"
-			self.changeState(state.WUpgradeToExplorer())
+			self.changeState(WUpgradeToExplorer())
 		elif(type == "craftsman"):
 			self.type = "craftsman"
 			self.profession = profession
-			self.changeState(state.WUpgradeToCraftsman())
+			self.changeState(WUpgradeToCraftsman())
 		else:
 			assert 0, "invalid type change..."
 
@@ -79,6 +78,53 @@ class Unit(BaseGameEntity):
 		self.currentState.Exit(self)
 		self.currentState = newState
 		self.currentState.Enter(self)
+
+	def explore(self):
+		currentTile = MapHandle.grid[self.tileId]
+		distance = len(MapHandle.grid)
+		while distance > 40:
+			x = MapHandle.grid[self.tileId] .xy[0] + randint(-5, 5)
+			y = MapHandle.grid[self.tileId] .xy[1] + randint(-5, 5)
+			if x <= 0 or y <= 0 or x >= MapHandle.width or y >= MapHandle.heigth:
+				continue
+			endTile = MapHandle.grid[x + y*MapHandle.width]
+			if not endTile.isWalkable:
+				continue
+			
+			distance = abs(currentTile.xy[0] - endTile.xy[0]) + abs(currentTile.xy[1] - endTile.xy[1])
+
+		return breadthFirst(MapHandle, currentTile, endTile)
+
+	def findTarget(self, type):
+		for building in BuildingManager.buildings:
+			if building.type == type and building.worker == None and building.done:
+				building.worker = self
+				return building
+		return False
+
+	def findTree(self):
+		self.startNode = MapHandle.grid[self.tileId]
+		self.endNode = ResourceManager.getClosestTree(self)
+		if self.endNode:
+			return breadthFirstW(MapHandle, self.startNode, self.endNode)
+		else:
+			return False
+
+	def findBuilding(self):
+		self.startNode = MapHandle.grid[self.tileId]
+		self.endNode = self.target
+		if self.endNode and self.startNode:
+			return breadthFirstW(MapHandle, self.startNode, self.endNode)
+		else:
+			return False
+
+	def findHome(self):
+		self.startNode = MapHandle.grid[self.tileId]
+		self.endNode = MapHandle.grid[BuildingManager.townhall.tileId]
+		if self.endNode:
+			return breadthFirstW(MapHandle, self.startNode, self.endNode)
+		else:
+			return False
 
 	def getDeltaMove(self):
 		dx = -(self.lastPosition[0] - self.position[0])
@@ -91,9 +137,9 @@ class Unit(BaseGameEntity):
 
 	def moveTo(self):
 		try:
-			node = self.map[self.path[0]]
-			distX = (self.position[0] - node.pos[0])
-			distY = (self.position[1] - node.pos[1])
+			tile = MapHandle.grid[self.path[0]]
+			distX = (self.position[0] - tile.position[0])
+			distY = (self.position[1] - tile.position[1])
 		except:
 			return False
 
@@ -102,8 +148,8 @@ class Unit(BaseGameEntity):
 		dxangle = -cos(angle)
 		dyangle = -sin(angle)
 
-		dx = -cos(angle) * node.moveSpeed
-		dy = -sin(angle) * node.moveSpeed
+		dx = -cos(angle) * tile.moveSpeed
+		dy = -sin(angle) * tile.moveSpeed
 
 		if abs(dx) > abs(distX):
 			dx = -distX
@@ -113,7 +159,7 @@ class Unit(BaseGameEntity):
 		self.position[0] += dx
 		self.position[1] += dy
 
-		return self.position[0] == node.pos[0] and self.position[1] == node.pos[1]
+		return self.position[0] == tile.position[0] and self.position[1] == tile.position[1]
 
 ##===================================================
 # Tile class (used to keep info about map).
@@ -143,6 +189,7 @@ class Tile(BaseGameEntity):
 		self.moveSpeed = Tile.config[self.type]["mSpeed"]
 		self.fogOfWar = Tile.config[self.type]["fogOfWar"]
 
+		self.tileId = 0
 		self.xy = []
 		self.position = []
 		self.trees = []
@@ -153,9 +200,13 @@ class Tile(BaseGameEntity):
 		for x in range(5):
 			self.trees.append(TreeNode(self))
 
+	def drawTrees(self):
+		for tree in trees:
+			WindowHandle
+
 # TreeNode class (used to keep info about the trees in Tiles)
 class TreeNode:
-	size = 4
+	size = 3
 	shape = None
 
 	def __init__(self, tile):
@@ -164,18 +215,14 @@ class TreeNode:
 		self.position = self.randomTreePosition()
 
 	def randomTreePosition(self):
-		self.x = x = uniform(self.parent.xy[0]*self.nodeSize[0], (self.parent.xy[0]+1)*self.nodeSize[0])
-		self.y = y = uniform(self.parent.xy[1]*self.nodeSize[1], (self.parent.xy[1]+1)*self.nodeSize[1])
+		self.x = x = uniform(self.parent.xy[0]*self.nodeSize[0]+self.nodeSize[0]/8, (self.parent.xy[0]+1)*self.nodeSize[0]-self.nodeSize[0]/8)
+		self.y = y = uniform(self.parent.xy[1]*self.nodeSize[1]+self.nodeSize[1]/8, (self.parent.xy[1]+1)*self.nodeSize[1]-self.nodeSize[1]/8)
 
 		return [x-self.size/2, y-self.size/2, x+self.size/2, y+self.size/2]
 
 ##===================================================
 # Building class
-class Building(BaseGameEntity):
-	def __init__(self, ID):
-		BaseGameEntity.__init__(self, ID)
-
-class TownHall(Building):
+class TownHall(BaseGameEntity):
 	tileId = None
 	position = None
 	shape = None
@@ -187,8 +234,37 @@ class TownHall(Building):
 		self.type = "townhall"
 		self.tileId = config["nodeId"]
 		self.parentTile = MapHandle.grid[self.tileId]
+		self.parentTile.building = self
 		self.position = self.parentTile.position
 		self.size = size = [WindowHandle.indent[0]/10*config["size"]/2, WindowHandle.indent[1]/10*config["size"]/2]
 		self.shape = WindowHandle.window.create_rectangle(self.position[0]-size[0], self.position[1]-size[1], self.position[0]+size[0], self.position[1]+size[1], fill= config["color"])
+		self.done = False
 		
 		self.exploreCloseTiles(self.parentTile)
+
+class Kiln(BaseGameEntity):
+	def __init__(self, ID):
+		BaseGameEntity.__init__(self, ID)
+		config = Config.config["buildings"]["kiln"]
+		self.type = "kiln"
+		MapHandle.placeBuilding(self)
+		self.worker = None
+		self.tileId = self.parentTile.tileId
+		self.parentTile.building = self
+		self.color = config["color"]
+		self.size = size = [WindowHandle.indent[0]/10*config["size"]/2, WindowHandle.indent[1]/10*config["size"]/2]
+		self.position = [self.parentTile.position[0] - size[0], self.parentTile.position[1] - size[1], self.parentTile.position[0] + size[0], self.parentTile.position[1] + size[1]]
+		self.done = False
+		
+		WindowHandle.addShapes.append(["rectangle", self.position, self, ""])
+
+	def addResources(self):
+		ResourceManager.charcoal += 2
+		ResourceManager.wood -= 1
+
+from managers import *
+from config import *
+from random import uniform, randint
+from states import *
+from math import atan2, cos, sin
+from pathfinding import *

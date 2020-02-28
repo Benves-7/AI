@@ -8,46 +8,121 @@ class State:
 
 class Idle(State):
 	def Enter(self, unit):
-		print(str(unit.ID) + ": is idle.")
 		pass
 	def Execute(self, unit):
 		pass
 	def Exit(self, unit):
-		print(str(unit.ID) + ": is not idle anymore.")
 		pass
 ##======================================================
 #Craftsman states
 class CStart(State):
-	def Enter(self, craftsman):
-		print(str(unit.ID) + " now a craftsman")
-	def Execute(self, craftsman):
+	def Enter(self, unit):
 		pass
-	def Exit(self, craftsman):
+	def Execute(self, unit):
+		unit.changeState(Idle())
+	def Exit(self, unit):
 		pass
 
 class CMoveToKiln(State):
-	def Enter(self, craftsman):
-		pass
-	def Execute(self, craftsman):
-		pass
-	def Exit(self, craftsman):
+	def Enter(self, unit):
+		unit.target = unit.findTarget("kiln")
+		unit.path = unit.findBuilding()
+		if unit.path:
+			unit.path.pop(0)
+		else:
+			unit.changeState(Idle())
+
+	def Execute(self, unit):
+		if len(unit.path) < 1:
+			unit.changeState(CWorking())
+		elif unit.moveTo():
+			unit.tileId = unit.path[0]
+			unit.path.pop(0)
+			MapHandle.exploreCloseTiles(unit.tileId)
+
+	def Exit(self, unit):
 		pass
 
 class CMoveToSmith(State):
-	def Enter(self, builder):
+	def Enter(self, unit):
 		pass
-	def Execute(self, builder):
+	def Execute(self, unit):
 		pass
-	def Exit(self, builder):
+	def Exit(self, unit):
+		pass
 		pass
 
 class CWorking(State):
-	def Enter(self, worker):
+	def Enter(self, unit):
+		unit.startTime = perf_counter()
+		unit.doneWhen = Config.config["workTime"]["coaling"]
+
+	def Execute(self, unit):
+		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.target.addResources()
+			unit.changeState(BMoveBackToTownHall())
+	
+	def Exit(self, unit):
+		unit.target.worker = None
+
+#Builder states
+class BMoveToBuilding(State):
+	def Enter(self, unit):
+		unit.target = BuildingManager.unfinishedBuilding
+		unit.path = unit.findBuilding()
+		if unit.path:
+			unit.path.pop(0)
+		else:
+			unit.changeState(Idle())
+
+	def Execute(self, unit):
+		if len(unit.path) < 1:
+			unit.changeState(BBuildBuilding())
+		elif unit.moveTo():
+			unit.tileId = unit.path[0]
+			unit.path.pop(0)
+			MapHandle.exploreCloseTiles(unit.tileId)
+
+	def Exit(self, unit):
 		pass
-	def Execute(self, worker):
+
+class BBuildBuilding(State):
+	def Enter(self, unit):
+		unit.startTime = perf_counter()
+		unit.doneWhen = Config.config["buildings"]["kiln"]["time"]
+
+	def Execute(self, unit):
+		if perf_counter() - unit.startTime > unit.doneWhen:
+			BuildingManager.completeBuilding()
+			ResourceManager.wood -= Config.config["buildings"]["kiln"]["cost"]
+			unit.changeState(BMoveBackToTownHall())
+
+	def Exit(self, unit):
 		pass
-	def Exit(self, worker):
-		pass
+
+class BMoveBackToTownHall(State):
+	def Enter(self, unit):
+		unit.path = unit.findHome()
+		if unit.path:
+			unit.path.pop(0)
+			unit.tryagain = False
+		else:
+			unit.tryagain = True
+
+	def Execute(self, unit):
+		if not unit.tryagain:
+			if len(unit.path) < 1:
+				unit.changeState(Idle())
+			elif unit.moveTo():
+				unit.tileId = unit.path[0]
+				unit.path.pop(0)
+				MapHandle.exploreCloseTiles(unit.tileId)
+		else:
+			unit.changeState(BMoveBackToTownHall())
+
+	def Exit(self, unit):
+		return
+
 
 ##======================================================
 #Worker states
@@ -62,12 +137,13 @@ class WStart(State):
 class WUpgradeToExplorer(State):
 
 	def Enter(self, unit):
-		print(str(unit.ID) + ": upgrading to explorer.")
 		unit.startTime = perf_counter()
 		unit.doneWhen = Config.config["upgradeTimes"]["explorer"]
 	
 	def Execute(self, unit):
 		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.colorChange = True
+			unit.color = Config.config["unitData"]["Ecolor"]
 			unit.changeState(EStart())
 
 	def Exit(self, unit):
@@ -80,6 +156,8 @@ class WUpgradeToCraftsman(State):
 		unit.doneWhen = Config.config["upgradeTimes"]["explorer"]
 	def Execute(self, unit):
 		if perf_counter() - unit.startTime > unit.doneWhen:
+			unit.colorChange = True
+			unit.color = Config.config["unitData"]["Ccolor"]
 			unit.changeState(CStart())
 	def Exit(self, unit):
 		 pass
@@ -91,7 +169,8 @@ class WCuttingTree(State):
 
 	def Execute(self, unit):
 		if perf_counter() - unit.startTime > unit.doneWhen:
-			unit.destroyTrees.append(unit.endNode.trees.pop())
+			tree = unit.endNode.trees.pop()
+			WindowHandle.removeShapes.append(tree.shape)
 			unit.changeState(WMoveBackToTownHall())
 			
 	def Exit(self, unit):
@@ -99,7 +178,7 @@ class WCuttingTree(State):
 
 class WMoveBackToTownHall(State):
 	def Enter(self, unit):
-		unit.path = unit.mapHandle.findHome(unit)
+		unit.path = unit.findHome()
 		if unit.path:
 			unit.path.pop(0)
 			unit.tryagain = False
@@ -108,14 +187,13 @@ class WMoveBackToTownHall(State):
 
 	def Execute(self, unit):
 		if not unit.tryagain:
-			if len(unit.path) < 1:	# never enters..
-				TownHall.trees += 1
-				print(TownHall.trees)
+			if len(unit.path) < 1:
+				ResourceManager.wood += 1
 				unit.changeState(Idle())
-			elif unit.MoveTo():
-				unit.nodeId = unit.path[0]
+			elif unit.moveTo():
+				unit.tileId = unit.path[0]
 				unit.path.pop(0)
-				unit.exploreCloseNodes()
+				MapHandle.exploreCloseTiles(unit.tileId)
 		else:
 			unit.changeState(WMoveBackToTownHall())
 
@@ -124,7 +202,7 @@ class WMoveBackToTownHall(State):
 
 class WGoToTree(State):
 	def Enter(self, unit):
-		unit.path = unit.mapHandle.findTree(unit)
+		unit.path = unit.findTree()
 		if unit.path:
 			unit.path.pop(0)
 		else:
@@ -133,45 +211,13 @@ class WGoToTree(State):
 	def Execute(self, unit):
 		if len(unit.path) < 1:
 			unit.changeState(WCuttingTree())
-		elif unit.MoveTo():
-			unit.nodeId = unit.path[0]
+		elif unit.moveTo():
+			unit.tileId = unit.path[0]
 			unit.path.pop(0)
-			unit.exploreCloseNodes()
+			MapHandle.exploreCloseTiles(unit.tileId)
 
 	def Exit(self, unit):
 		pass
-
-##======================================================
-#Builder states
-class BStart(State):
-	def Enter(self, builder):
-		pass
-
-	def Execute(self, builder):
-		pass
-
-	def Exit(self, builder):
-		pass
-
-class BBuildBuilding(State):
-	def Enter(self, builder):
-		pass
-
-	def Execute(self, builder):
-		pass
-
-	def Exit(self, builder):
-		pass
-
-class BMoveBackToTownHall(State):
-	def Enter(self, builder):
-		pass
-
-	def Execute(self, builder):
-		pass
-
-	def Exit(self, Entity):
-		return
 
 ##======================================================
 #Explorer states
@@ -187,7 +233,7 @@ class EStart(State):
 
 class EExploring(State):
 	def Enter(self, unit):
-		unit.path = unit.mapHandle.findExploration(unit)
+		unit.path = unit.explore()
 		if unit.path:
 			unit.path.pop(0)
 		else:
@@ -196,10 +242,9 @@ class EExploring(State):
 	def Execute(self, unit):
 		if len(unit.path) < 1:
 			unit.changeState(EWaiting())
-		elif unit.MoveTo():
-			unit.nodeId = unit.path[0]
-			unit.path.pop(0)
-			unit.exploreCloseNodes()
+		elif unit.moveTo():
+			unit.tileId = unit.path.pop(0)
+			MapHandle.exploreCloseTiles(unit.tileId)
 			
 	def Exit(self, unit):
 		pass
@@ -216,3 +261,4 @@ class EWaiting(State):
 
 from time import perf_counter
 from config import *
+from managers import *

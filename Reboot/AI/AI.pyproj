@@ -29,6 +29,9 @@
     <Compile Include="managers.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pathfinding.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="states.py">
       <SubType>Code</SubType>
     </Compile>
