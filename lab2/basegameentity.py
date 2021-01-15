@@ -165,7 +165,8 @@ class Entity(BaseGameEntity):
 			tile = localMap[nodeID]
 			if(tile.fogOfWar):
 				tile.fogOfWar = False
-				Window.exploredID.append(nodeID)
+
+			Window.exploredID.append(nodeID)
 
 import state
 from math import *
